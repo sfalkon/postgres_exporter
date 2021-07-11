@@ -16,6 +16,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/go-kit/kit/log/level"
@@ -24,11 +25,12 @@ import (
 
 // UserQuery represents a user defined query
 type UserQuery struct {
-	Query        string    `yaml:"query"`
-	Metrics      []Mapping `yaml:"metrics"`
-	Master       bool      `yaml:"master"`        // Querying only for master database
-	CacheSeconds uint64    `yaml:"cache_seconds"` // Number of seconds to cache the namespace result metrics for.
-	RunOnServer  string    `yaml:"runonserver"`   // Querying to run on which server version
+	Query        string        `yaml:"query"`
+	Metrics      []Mapping     `yaml:"metrics"`
+	Master       bool          `yaml:"master"`        // Querying only for master database
+	CacheSeconds uint64        `yaml:"cache_seconds"` // Number of seconds to cache the namespace result metrics for.
+	RunOnServer  string        `yaml:"runonserver"`   // Querying to run on which server version
+	TimeOut      time.Duration `yaml:"timeout"`       // Number of millisecond query timeout
 }
 
 // UserQueries represents a set of UserQuery objects
@@ -220,6 +222,7 @@ func parseUserQueries(content []byte) (map[string]intermediateMetricMap, map[str
 				columnMappings: newMetricMap,
 				master:         specs.Master,
 				cacheSeconds:   specs.CacheSeconds,
+				timeout:        specs.TimeOut,
 			}
 			metricMaps[metric] = metricMap
 		}

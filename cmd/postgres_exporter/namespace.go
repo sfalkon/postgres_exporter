@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -46,9 +47,14 @@ func queryNamespaceMapping(server *Server, namespace string, mapping MetricMapNa
 		// I've no idea how to avoid this properly at the moment, but this is
 		// an admin tool so you're not injecting SQL right?
 		rows, err = server.db.Query(fmt.Sprintf("SELECT * FROM %s;", namespace)) // nolint: gas
+	} else if mapping.timeout > 0 {
+		ctxQuery, cancelQuery := context.WithTimeout(context.Background(), mapping.timeout*time.Millisecond)
+		defer cancelQuery()
+		rows, err = server.db.QueryContext(ctxQuery, query)
 	} else {
 		rows, err = server.db.Query(query)
 	}
+
 	if err != nil {
 		return []prometheus.Metric{}, []error{}, fmt.Errorf("Error running query on database %q: %s %v", server, namespace, err)
 	}

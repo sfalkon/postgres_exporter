@@ -49,6 +49,7 @@ func (s *FunctionalSuite) TestSemanticVersionColumnDiscard(c *C) {
 			},
 			true,
 			0,
+			QUERYTIMEOUT,
 		},
 	}
 

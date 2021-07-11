@@ -48,6 +48,8 @@ const (
 	DURATION ColumnUsage = iota
 	// HISTOGRAM identifies a column as a histogram
 	HISTOGRAM ColumnUsage = iota
+	// QUERYTIMEOUT timeout for internal metrics in milliseconds.
+	QUERYTIMEOUT = 0
 )
 
 // UnmarshalYAML implements the yaml.Unmarshaller interface.
@@ -112,6 +114,7 @@ type intermediateMetricMap struct {
 	columnMappings map[string]ColumnMapping
 	master         bool
 	cacheSeconds   uint64
+	timeout        time.Duration
 }
 
 // MetricMapNamespace groups metric maps under a shared set of labels.
@@ -120,6 +123,7 @@ type MetricMapNamespace struct {
 	columnMappings map[string]MetricMap // Column mappings in this namespace
 	master         bool                 // Call query only for master database
 	cacheSeconds   uint64               // Number of seconds this metric namespace can be cached. 0 disables.
+	timeout        time.Duration        // Number of milliseconds query timeout
 }
 
 // MetricMap stores the prometheus metric description which a given column will
@@ -179,6 +183,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 	"pg_stat_database": {
 		map[string]ColumnMapping{
@@ -204,6 +209,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 	"pg_stat_database_conflicts": {
 		map[string]ColumnMapping{
@@ -217,6 +223,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 	"pg_locks": {
 		map[string]ColumnMapping{
@@ -226,6 +233,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 	"pg_stat_replication": {
 		map[string]ColumnMapping{
@@ -272,6 +280,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 	"pg_replication_slots": {
 		map[string]ColumnMapping{
@@ -282,6 +291,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 	"pg_stat_archiver": {
 		map[string]ColumnMapping{
@@ -296,6 +306,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 	"pg_stat_activity": {
 		map[string]ColumnMapping{
@@ -306,6 +317,7 @@ var builtinMetricMaps = map[string]intermediateMetricMap{
 		},
 		true,
 		0,
+		QUERYTIMEOUT,
 	},
 }
 
@@ -439,7 +451,7 @@ func makeDescMap(pgVersion semver.Version, serverLabels prometheus.Labels, metri
 			}
 		}
 
-		metricMap[namespace] = MetricMapNamespace{variableLabels, thisMap, intermediateMappings.master, intermediateMappings.cacheSeconds}
+		metricMap[namespace] = MetricMapNamespace{variableLabels, thisMap, intermediateMappings.master, intermediateMappings.cacheSeconds, intermediateMappings.timeout}
 	}
 
 	return metricMap
